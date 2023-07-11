@@ -3,11 +3,9 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 
-MAX_PAGES = 2  # From the api tested
+MAX_PAGES = 2  # From the api entrypoint tested
 
-PAGES_ITER = [
-    None,
-] + [*range(1, MAX_PAGES)]
+PAGES_ITER = [None] + [*range(1, MAX_PAGES)]
 
 
 @pytest.mark.parametrize("page_num", PAGES_ITER)

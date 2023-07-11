@@ -1,16 +1,15 @@
 """Proxy server route."""
-from typing import Annotated, Union, Dict
+from typing import Annotated, Dict
 
 from pydantic import AnyUrl
+
 from fastapi.responses import Response
 from fastapi import APIRouter, Depends, Request
+
 from aiohttp import ClientResponse, ClientSession
 
 
-from proxy_server.api.dependencies.cached_responses import (
-    get_cached_response,
-    responses_cache,
-)
+from proxy_server.api.dependencies.cached_responses import responses_cache
 from proxy_server.api.dependencies.request_parsing import parsed_headers, get_full_path
 
 
@@ -22,16 +21,13 @@ async def proxy(
     url: Annotated[AnyUrl, Depends(get_full_path)],
     request: Request,
     headers: Annotated[dict, Depends(parsed_headers)],
-    cached_response: Annotated[
-        Union[ClientResponse, None], Depends(get_cached_response)
-    ],
     cache: Annotated[Dict[str, ClientResponse], Depends(responses_cache)],
 ):
     """Get specified path in an async way, if response already exists in cache
     return it instead"""
+    cached_response = cache.get(url.unicode_string())
     if cached_response:
         response = cached_response
-
     else:
         async with ClientSession(headers=headers) as session:
             async with session.request(

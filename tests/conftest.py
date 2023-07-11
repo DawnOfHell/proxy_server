@@ -1,21 +1,21 @@
 """Basic test fixtures."""
 import pytest
-from functools import lru_cache
 
 from cachetools import TTLCache
+
 from fastapi.testclient import TestClient
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from proxy_server.api.app import app, LIMITS, MAX_REQUESTS_PER_MINUTE
+from proxy_server.api.app import app, MAX_REQUESTS_PER_MINUTE
 from proxy_server.api.dependencies.cached_responses import MAX_REQUESTS_PER_DAY
 from proxy_server.api.dependencies.cached_responses import responses_cache
 
 
 # pylint: disable=redefined-outer-name
 
-OVERHEAD = 2  # Overhead of requests to add to max_requests per minute.
+OVERHEAD = 2  # Overhead to add to by day max limit.
 TEN_SECONDS_CACHE = 10
 
 
@@ -41,16 +41,19 @@ def path_url(example_url):
 
 @pytest.fixture()
 def mock_limiter():
-    """Mocks the app's limiter less messages per day."""
-    limits = LIMITS
-    limits[1] = f"{MAX_REQUESTS_PER_MINUTE + OVERHEAD}/day"
+    """Mocks the app's limiter to block on second instead of minute."""
+    limits = [f"{MAX_REQUESTS_PER_MINUTE}/second"]
     return Limiter(key_func=get_remote_address, default_limits=limits)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def mock_cache():
-    @lru_cache
-    def cache():
-        return TTLCache(maxsize=MAX_REQUESTS_PER_DAY,
-                        ttl=TEN_SECONDS_CACHE)
-    return cache
+    """Create a cache with less ttl."""
+    return TTLCache(maxsize=MAX_REQUESTS_PER_DAY,
+                    ttl=TEN_SECONDS_CACHE)
+
+
+@pytest.fixture(autouse=True)
+def override_cache(mock_cache):
+    """Override the cache dependency"""
+    app.dependency_overrides[responses_cache] = lambda : mock_cache
