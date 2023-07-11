@@ -7,6 +7,8 @@ from pydantic import AnyUrl
 from cachetools import TTLCache
 from aiohttp import ClientResponse
 
+from proxy_server.api.dependencies.request_parsing import get_full_path
+
 MAX_REQUESTS_PER_DAY = 1000
 DAY_CACHE_IN_SECONDS = 60 * 60 * 24
 
@@ -18,7 +20,7 @@ def responses_cache() -> TTLCache:
 
 
 async def get_cached_response(
-    path: AnyUrl,
+    path: Annotated[AnyUrl, Depends(get_full_path)],
     cached_responses: Annotated[Dict[str, ClientResponse], Depends(responses_cache)],
 ) -> ClientResponse:
     """Get cached response by path."""

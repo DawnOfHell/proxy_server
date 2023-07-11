@@ -7,13 +7,15 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi import _rate_limit_exceeded_handler, Limiter
 
 from proxy_server.api.routes.proxy import router
-from proxy_server.api.dependencies.chached_responses import MAX_REQUESTS_PER_DAY
+from proxy_server.api.dependencies.cached_responses import MAX_REQUESTS_PER_DAY
 
 MAX_REQUESTS_PER_MINUTE = 10
 
+LIMITS = [f"{MAX_REQUESTS_PER_MINUTE}/minute", f"{MAX_REQUESTS_PER_DAY}/day"]
+
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=[f"{MAX_REQUESTS_PER_MINUTE}/minute", f"{MAX_REQUESTS_PER_DAY}/day"],
+    default_limits=LIMITS,
 )
 
 app = FastAPI()

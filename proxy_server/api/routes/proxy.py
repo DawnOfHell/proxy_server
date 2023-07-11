@@ -7,11 +7,11 @@ from fastapi import APIRouter, Depends, Request
 from aiohttp import ClientResponse, ClientSession
 
 
-from proxy_server.api.dependencies.chached_responses import (
+from proxy_server.api.dependencies.cached_responses import (
     get_cached_response,
     responses_cache,
 )
-from proxy_server.api.dependencies.request_parsing import parsed_headers
+from proxy_server.api.dependencies.request_parsing import parsed_headers, get_full_path
 
 
 router = APIRouter(tags=["proxy"])
@@ -19,7 +19,7 @@ router = APIRouter(tags=["proxy"])
 
 @router.get("/{path:path}")
 async def proxy(
-    path: AnyUrl,
+    url: Annotated[AnyUrl, Depends(get_full_path)],
     request: Request,
     headers: Annotated[dict, Depends(parsed_headers)],
     cached_response: Annotated[
@@ -30,21 +30,21 @@ async def proxy(
     """Get specified path in an async way, if response already exists in cache
     return it instead"""
     if cached_response:
-        text_content = await cached_response.text()
         response = cached_response
 
     else:
         async with ClientSession(headers=headers) as session:
             async with session.request(
                 method=request.method,
-                url=path.unicode_string(),
+                url=url.unicode_string(),
                 data=await request.body(),
             ) as response:
-                text_content = await response.text()
-            cache.update({path.unicode_string(): response})
+                content = await response.content.read()
+                response = Response(
+                    content=content,
+                    status_code=response.status,
+                    media_type=response.content_type,
+                )
+            cache.update({url.unicode_string(): response})
 
-    return Response(
-        content=text_content,
-        status_code=response.status,
-        media_type=response.content_type,
-    )
+    return response
