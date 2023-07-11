@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "proxy-server"
+version = "0.1.0"
+description = "an async proxy server to send messages to remote servers"
+authors = ["Dawn <shahar.heller3@gmail.com>"]
+readme = "README.md"
+packages = [{include = "proxy_server"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.100.0"
+uvicorn = "^0.22.0"
+aiohttp = "^3.8.4"
+brotli = "^1.0.9"
+cachetools = "^5.3.1"
+slowapi = "^0.1.8"
+async-cache = "^1.1.1"
+
+
+[tool.poetry.group.dev.dependencies]
+ipdb = "^0.13.13"
+pylint = "^2.17.4"
+black = "^23.3.0"
+requests = "^2.31.0"
+httpx = "^0.24.1"
+pytest = "^7.4.0"
+mock = "^5.1.0"
+pytest-mock = "^3.11.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
